@@ -1,4 +1,4 @@
-// criar_ficha_script_final.js
+// criar_ficha_script_v5_final_e_corrigido.js
 
 // --- VARIÁVEIS GLOBAIS ---
 let exerciciosAdicionados = [];
@@ -29,43 +29,7 @@ function atualizarContadorExercicios() { document.querySelector(".counter").text
 
 // --- FUNÇÕES DE INTEGRAÇÃO COM SUPABASE ---
 async function popularAlunosSelect() { const selectAluno = document.getElementById('select-aluno'); selectAluno.innerHTML = '<option value="">Carregando...</option>'; const { data: clients, error } = await _supabase.from('clients').select('id, nome').not('credencial', 'is', null).order('nome', { ascending: true }); if (error) { console.error('Erro ao buscar alunos:', error); selectAluno.innerHTML = '<option value="">Erro ao carregar alunos</option>'; return; } selectAluno.innerHTML = '<option value="">Selecione um aluno</option>'; clients.forEach(client => { const option = document.createElement('option'); option.value = client.id; option.textContent = client.nome; selectAluno.appendChild(option); }); }
-
-async function popularFichasExistentes(alunoId) {
-    const listaFichas = document.getElementById('lista-fichas-existentes');
-    listaFichas.innerHTML = '<p>Carregando fichas...</p>';
-    if (!alunoId) {
-        listaFichas.innerHTML = '<p>Selecione um aluno primeiro</p>';
-        return;
-    }
-    const { data: workoutPlans, error } = await _supabase.from('planos_de_treino').select('id, name, data_troca, exercicios').eq('user_id', alunoId).order('data_troca', { ascending: false });
-    if (error) {
-        console.error('Erro ao buscar fichas existentes:', error);
-        listaFichas.innerHTML = '<p>Erro ao carregar fichas</p>';
-        return;
-    }
-    if (workoutPlans.length === 0) {
-        listaFichas.innerHTML = '<p>Nenhuma ficha encontrada para este aluno</p>';
-        return;
-    }
-    listaFichas.innerHTML = '';
-    workoutPlans.forEach(plan => {
-        const fichaItem = document.createElement('div');
-        fichaItem.className = 'ficha-item';
-        fichaItem.dataset.plan = JSON.stringify(plan);
-        
-        const dataFormatada = new Date(plan.data_troca).toLocaleDateString('pt-BR');
-        const numExercicios = plan.exercicios ? plan.exercicios.length : 0;
-        
-        fichaItem.innerHTML = `
-            <div class="ficha-info">
-                <h4>${plan.name}</h4>
-                <p>Data: ${dataFormatada} | ${numExercicios} exercício(s)</p>
-            </div>
-        `;
-        listaFichas.appendChild(fichaItem);
-    });
-}
-
+async function popularFichasExistentes(alunoId) { const listaFichas = document.getElementById('lista-fichas-existentes'); listaFichas.innerHTML = '<p>Carregando fichas...</p>'; if (!alunoId) { listaFichas.innerHTML = '<p>Selecione um aluno primeiro</p>'; return; } const { data: workoutPlans, error } = await _supabase.from('planos_de_treino').select('id, name, data_troca, exercicios').eq('user_id', alunoId).order('data_troca', { ascending: false }); if (error) { console.error('Erro ao buscar fichas existentes:', error); listaFichas.innerHTML = '<p>Erro ao carregar fichas</p>'; return; } if (workoutPlans.length === 0) { listaFichas.innerHTML = '<p>Nenhuma ficha encontrada para este aluno</p>'; return; } listaFichas.innerHTML = ''; workoutPlans.forEach(plan => { const fichaItem = document.createElement('div'); fichaItem.className = 'ficha-item'; fichaItem.dataset.fichaId = plan.id; const dataFormatada = new Date(plan.data_troca).toLocaleDateString('pt-BR'); const numExercicios = plan.exercicios ? plan.exercicios.length : 0; fichaItem.innerHTML = `<div class="ficha-info"><h4>${plan.name}</h4><p>Data: ${dataFormatada} | ${numExercicios} exercício(s)</p></div>`; fichaItem.addEventListener('click', () => { document.querySelectorAll('.ficha-item').forEach(item => item.classList.remove('selected')); fichaItem.classList.add('selected'); fichaSelecionada = plan; document.getElementById('btn-editar-ficha').disabled = false; }); listaFichas.appendChild(fichaItem); }); }
 async function salvarFichaOnline() { console.log(`[salvarFichaOnline] Tentando salvar com Aluno ID: ${currentAlunoId}`); const nomeFicha = document.getElementById('nome-ficha').value.trim(); const dataTroca = document.getElementById('data-troca').value; const observacoes = document.getElementById('observacoes-aluno').value; if (!currentAlunoId) { alert('ERRO CRÍTICO: O ID do aluno é nulo. Por favor, selecione o aluno novamente.'); console.error("Tentativa de salvar sem currentAlunoId."); return; } if (exerciciosAdicionados.length === 0) { alert('Por favor, adicione pelo menos um exercício à ficha.'); return; } const loading = document.getElementById("loading"); loading.classList.add("show"); const { data: { user } } = await _supabase.auth.getUser(); if (!user) { alert('Você precisa estar logado para salvar a ficha.'); loading.classList.remove("show"); return; } const fichaData = { user_id: currentAlunoId, name: nomeFicha, data_troca: dataTroca, observacoes: observacoes, exercicios: exerciciosAdicionados, created_by: user.id }; let result; if (currentWorkoutPlanId) { result = await _supabase.from('planos_de_treino').update(fichaData).eq('id', currentWorkoutPlanId).select(); } else { result = await _supabase.from('planos_de_treino').insert(fichaData).select(); } loading.classList.remove("show"); if (result.error) { console.error('Erro ao salvar/atualizar a ficha online:', result.error); alert('Ocorreu um erro ao salvar/atualizar a ficha online. Detalhes: ' + result.error.message); } else { alert('Ficha salva/atualizada com sucesso!'); if (!currentWorkoutPlanId && result.data && result.data.length > 0) { currentWorkoutPlanId = result.data[0].id; } popularFichasExistentes(currentAlunoId); document.getElementById('modo-edicao').textContent = '(Editando)'; document.getElementById('nome-ficha-atual').textContent = `- ${nomeFicha}`; } }
 
 // --- FUNÇÕES DE GERAÇÃO DE PDF ---
@@ -109,22 +73,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Listener centralizado para todos os cliques importantes
+    // ✅✅✅ CORREÇÃO APLICADA AQUI (DELEGAÇÃO DE EVENTOS) ✅✅✅
+    // Usamos um listener no 'document' que está sempre presente.
+    // Ele vai "ouvir" todos os cliques e depois verificamos onde o clique aconteceu.
     document.addEventListener('click', (event) => {
-        const fichaItemClicado = event.target.closest('.ficha-item');
         
-        // --- Lógica para SELECIONAR uma ficha existente ---
-        if (fichaItemClicado) {
-            document.querySelectorAll('.ficha-item').forEach(item => item.classList.remove('selected'));
-            fichaItemClicado.classList.add('selected');
-            fichaSelecionada = JSON.parse(fichaItemClicado.dataset.plan);
-            document.getElementById('btn-editar-ficha').disabled = false;
-            console.log('Ficha selecionada:', fichaSelecionada.name);
-            return; // Para a execução para não confundir com cliques em botões
-        }
-        
-        // --- Lógica para os BOTÕES ---
+        // --- Lógica para o botão EDITAR ---
+        // event.target.closest('#id') encontra o elemento com o ID, mesmo que o clique tenha sido num ícone dentro do botão.
         if (event.target.closest('#btn-editar-ficha')) {
+            console.log('Botão "Editar Ficha" clicado!');
+            // A ação só é disparada se o botão não estiver desabilitado
             if (!event.target.closest('#btn-editar-ficha').disabled) {
                 if (fichaSelecionada) {
                     iniciarEdicaoFicha(fichaSelecionada.id);
@@ -133,16 +91,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         }
-        else if (event.target.closest('#btn-nova-ficha')) {
+
+        // --- Lógica para o botão NOVA FICHA ---
+        if (event.target.closest('#btn-nova-ficha')) {
+            console.log('Botão "Nova Ficha" clicado!');
             iniciarNovaFicha();
         }
-        else if (event.target.closest('#btn-salvar-ficha')) {
+
+        // --- Lógica para o botão SALVAR ---
+        if (event.target.closest('#btn-salvar-ficha')) {
+            console.log('Botão "Salvar Ficha" clicado!');
             salvarFichaOnline();
         }
-        else if (event.target.closest('#btn-gerar-pdf')) {
+
+        // --- Lógica para o botão GERAR PDF ---
+        if (event.target.closest('#btn-gerar-pdf')) {
+            console.log('Botão "Gerar PDF" clicado!');
             gerarPDF();
         }
-        else if (event.target.closest('.add-exercise-btn[onclick="adicionarExercicio()"]')) {
+
+        // --- Lógica para o botão ADICIONAR EXERCÍCIO ---
+        // Usamos o seletor de classe e o atributo onclick para garantir que é o botão certo
+        if (event.target.closest('.add-exercise-btn[onclick="adicionarExercicio()"]')) {
+            console.log('Botão "Adicionar Exercício" clicado!');
             adicionarExercicio();
         }
     });
