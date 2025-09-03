@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Clientes - FitCraft</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="FitCraft Personal">
+    <link rel="apple-touch-icon" href="images/icons/icon-152x152.png">
+    <meta name="msapplication-TileImage" content="images/icons/icon-144x144.png">
+    <meta name="msapplication-TileColor" content="#2f3e5c">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <img src="images/cabecalho_sem_fundo.png" alt="FitCraft Logo" class="fitcraft-logo-header">
+        </header>
+
+        <section class="content-section">
+            <h2>Clientes Ativos</h2>
+            <p>Aqui você poderá visualizar e gerenciar todos os seus clientes ativos.</p>
+            <!-- Conteúdo para listar e gerenciar clientes -->
+            <div class="form-card">
+                <h3>Cadastro de Alunos</h3>
+                <div class="form-group">
+                    <label for="nome-novo-aluno">Nome do Aluno</label>
+                    <input type="text" id="nome-novo-aluno" placeholder="Nome completo do aluno">
+                </div>
+                <div class="form-group">
+                    <label for="data-cadastro-aluno">Data de Cadastro</label>
+                    <input type="date" id="data-cadastro-aluno">
+                </div>
+                <button class="add-exercise-btn" id="btn-cadastrar-aluno">Cadastrar Aluno</button>
+            </div>
+
+            <div class="form-card">
+                <h3>Lista de Clientes Cadastrados</h3>
+                <ul id="lista-clientes-cadastrados" class="client-list">
+                    <!-- Clientes serão adicionados aqui via JS -->
+                </ul>
+            </div>
+
+           <a href="index.html" class="back-button-image"><img src="images/botao_voltar_clientes.png" alt="Voltar"></a>        </section>
+    </div>
+    <script src="script.js"></script>
+    
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Supabase Auth Module -->
+    <script src="supabase-auth.js"></script>
+    
+    <!-- Supabase Data Module -->
+    <script src="supabase-data.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", async function() {
+            const btnCadastrarAluno = document.getElementById("btn-cadastrar-aluno");
+            const nomeNovoAlunoInput = document.getElementById("nome-novo-aluno");
+            const dataCadastroAlunoInput = document.getElementById("data-cadastro-aluno");
+            const listaClientesCadastrados = document.getElementById("lista-clientes-cadastrados");
+
+            let clientes = [];
+
+            async function carregarClientes() {
+                try {
+                    const resultado = await fitCraftData.listarClientes();
+                    if (resultado.success) {
+                        clientes = resultado.data;
+                        renderizarClientes();
+                    } else {
+                        console.error('Erro ao carregar clientes:', resultado.error);
+                        mostrarMensagem('Erro ao carregar clientes', 'error');
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar clientes:', error);
+                    mostrarMensagem('Erro ao carregar clientes', 'error');
+                }
+            }
+
+            function renderizarClientes() {
+                listaClientesCadastrados.innerHTML = "";
+                if (clientes.length === 0) {
+                    listaClientesCadastrados.innerHTML = 
+                        `<li class="empty-state-list">
+                            Nenhum cliente cadastrado ainda.
+                        </li>`;
+                    return;
+                }
+                clientes.forEach((cliente, index) => {
+                    const li = document.createElement("li");
+                    li.className = "client-item-list";
+                    li.innerHTML = `
+                        <span>${cliente.nome}</span>
+                        <span>${new Date(cliente.created_at).toLocaleDateString('pt-BR')}</span>
+                        <button class="remove-client-btn" data-id="${cliente.id}">Remover</button>
+                    `;
+                    listaClientesCadastrados.appendChild(li);
+                });
+                adicionarEventosRemover();
+            }
+
+            function adicionarEventosRemover() {
+                document.querySelectorAll(".remove-client-btn").forEach(button => {
+                    button.onclick = async function() {
+                        const clienteId = this.dataset.id;
+                        if (confirm('Tem certeza que deseja remover este cliente?')) {
+                            // Implementar remoção no Supabase se necessário
+                            await carregarClientes(); // Recarregar lista
+                        }
+                    };
+                });
+            }
+
+            function mostrarMensagem(texto, tipo = 'info') {
+                // Criar elemento de mensagem temporária
+                const mensagem = document.createElement('div');
+                mensagem.className = `mensagem ${tipo}`;
+                mensagem.textContent = texto;
+                mensagem.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: 600;
+                    z-index: 1000;
+                    background: ${tipo === 'error' ? '#e74c3c' : '#27ae60'};
+                `;
+                document.body.appendChild(mensagem);
+                
+                setTimeout(() => {
+                    document.body.removeChild(mensagem);
+                }, 3000);
+            }
+
+            btnCadastrarAluno.onclick = async function() {
+                const nome = nomeNovoAlunoInput.value.trim();
+                const data = dataCadastroAlunoInput.value;
+                
+                if (nome && data) {
+                    try {
+                        const resultado = await fitCraftData.criarCliente({
+                            nome: nome,
+                            email: '',
+                            telefone: '',
+                            dataNascimento: data,
+                            observacoes: ''
+                        });
+                        
+                        if (resultado.success) {
+                            nomeNovoAlunoInput.value = "";
+                            dataCadastroAlunoInput.value = "";
+                            mostrarMensagem('Cliente cadastrado com sucesso!', 'success');
+                            await carregarClientes();
+                        } else {
+                            mostrarMensagem('Erro ao cadastrar cliente: ' + resultado.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Erro ao cadastrar cliente:', error);
+                        mostrarMensagem('Erro ao cadastrar cliente', 'error');
+                    }
+                } else {
+                    mostrarMensagem("Por favor, preencha o nome e a data de cadastro do aluno.", 'error');
+                }
+            };
+
+            // Carregar clientes ao inicializar
+            await carregarClientes();
+        });
+    </script>
+</body>
+</html>
+
+
+
+    <script>
+        if (
+            'serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered: ', registration);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
+    </script>
+
+
