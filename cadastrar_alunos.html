@@ -47,13 +47,13 @@
             <div class="form-card">
                 <h3>Alunos Cadastrados</h3>
                 <ul id="lista-alunos-cadastrados" class="client-list">
-                    <!-- Alunos serão listados aqui dinamicamente pelo JavaScript -->
+                    <!-- Alunos serão listados aqui -->
                 </ul>
             </div>
         </section>
     </div>
 
-    <!-- Modal para exibir a credencial gerada -->
+    <!-- Modal para exibir a credencial -->
     <div id="credential-modal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>
@@ -66,7 +66,7 @@
         </div>
     </div>
     
-    <!-- Toast para notificações (opcional) -->
+    <!-- Toast para notificações -->
     <div id="toast" class="toast">
         <div class="toast-content">
             <span class="toast-icon">✓</span>
@@ -78,26 +78,12 @@
     <!--                  SEÇÃO DE SCRIPTS - ORDEM CORRETA                   -->
     <!-- =================================================================== -->
 
-    <!-- 1. BIBLIOTECA SUPABASE -->
-    <!-- Este script precisa vir primeiro, pois os outros dependem dele. -->
-    <!-- Ele fornece o objeto global `supabase` que usamos para criar nosso cliente. -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- 2. CONFIGURAÇÃO DO CLIENTE SUPABASE -->
-    <!-- Este é o seu arquivo `supabase-client.js`. -->
-    <!-- Ele usa a biblioteca acima para criar uma conexão específica para o seu projeto. -->
     <script src="supabase-client.js"></script>
-
-    <!-- 3. SCRIPT PRINCIPAL DA PÁGINA -->
-    <!-- Este é o seu arquivo `cadastrar_alunos_script.js`. -->
-    <!-- Ele contém toda a lógica da página (eventos de clique, renderização, etc. ) -->
-    <!-- e agora pode usar a variável `supabase` definida no script anterior. -->
     <script src="cadastrar_alunos_script.js"></script>
 
-    <!-- 4. SCRIPT DO SERVICE WORKER (para funcionalidades PWA) -->
-    <!-- Este script é independente e pode ser carregado por último. -->
     <script>
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator ) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
                     .then(registration => {
