@@ -1,38 +1,6 @@
-// cadastrar_alunos_script.js (Versão com Correção Mobile)
-// APENAS ADICIONADAS verificações para mobile - resto mantido igual
+// cadastrar_alunos_script.js (Versão com Desativação de Credencial)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Aguarda o Supabase estar pronto antes de executar
-    waitForSupabase().then(() => {
-        initCadastroAlunos();
-    }).catch(error => {
-        console.error('Erro ao inicializar:', error);
-        alert('Erro ao conectar com o banco de dados. Verifique sua conexão.');
-    });
-});
-
-// NOVA FUNÇÃO: Aguarda o Supabase estar pronto
-function waitForSupabase(maxTries = 20) {
-    return new Promise((resolve, reject) => {
-        let tries = 0;
-        
-        const check = () => {
-            tries++;
-            if (window._supabase) {
-                resolve();
-            } else if (tries >= maxTries) {
-                reject(new Error('Supabase não inicializou'));
-            } else {
-                setTimeout(check, 250);
-            }
-        };
-        
-        check();
-    });
-}
-
-// FUNÇÃO PRINCIPAL (mantida igual, apenas envolvida)
-function initCadastroAlunos() {
     // --- CONSTANTES DO DOM (não mudam) ---
     const btnSalvarAluno = document.getElementById('btn-salvar-aluno');
     const listaAlunosCadastrados = document.getElementById('lista-alunos-cadastrados');
@@ -81,22 +49,18 @@ function initCadastroAlunos() {
             return; // Usuário cancelou
         }
 
-        try {
-            // Atualiza a coluna 'credencial' para NULL para o cliente específico
-            const { error } = await _supabase
-                .from('clients')
-                .update({ credencial: null }) // Define a credencial como nula
-                .eq('id', clientId);
+        // Atualiza a coluna 'credencial' para NULL para o cliente específico
+        const { error } = await _supabase
+            .from('clients')
+            .update({ credencial: null }) // Define a credencial como nula
+            .eq('id', clientId);
 
-            if (error) {
-                throw error;
-            }
-
-            console.log('Acesso do cliente desativado com sucesso!');
-            renderizarAlunos(); // Atualiza a lista para refletir a mudança
-        } catch (error) {
+        if (error) {
             console.error('Erro ao desativar credencial:', error);
             alert(`Não foi possível desativar o acesso. Detalhes: ${error.message}`);
+        } else {
+            console.log('Acesso do cliente desativado com sucesso!');
+            renderizarAlunos(); // Atualiza a lista para refletir a mudança
         }
     }
 
@@ -106,51 +70,48 @@ function initCadastroAlunos() {
     async function renderizarAlunos() {
         listaAlunosCadastrados.innerHTML = '<li>Carregando alunos...</li>';
 
-        try {
-            const { data: clients, error } = await _supabase
-                .from('clients')
-                .select('id, nome, credencial')
-                .order('created_at', { ascending: false });
+        const { data: clients, error } = await _supabase
+            .from('clients')
+            .select('id, nome, credencial')
+            .order('created_at', { ascending: false });
 
-            if (error) {
-                throw error;
-            }
-
-            listaAlunosCadastrados.innerHTML = '';
-
-            if (clients.length === 0) {
-                listaAlunosCadastrados.innerHTML = '<li>Nenhum cliente cadastrado.</li>';
-                return;
-            }
-
-            clients.forEach(client => {
-                const li = document.createElement('li');
-                li.className = 'client-item-list';
-
-                // Lógica para exibir a credencial ou o status "Acesso Desativado"
-                const temCredencial = client.credencial;
-                const credencialDisplay = temCredencial 
-                    ? `Credencial: <strong>${client.credencial}</strong>` 
-                    : `<span style="color: #e74c3c;">Acesso Desativado</span>`;
-
-                // Lógica para mostrar o botão de desativar apenas se houver credencial
-                const botaoDisplay = temCredencial
-                    ? `<button class="remove-client-btn" data-client-id="${client.id}">Desativar Acesso</button>`
-                    : '';
-
-                li.innerHTML = `
-                    <div class="client-info">
-                        <span>${client.nome || 'Nome não encontrado'}</span>
-                        <small>${credencialDisplay}</small>
-                    </div>
-                    ${botaoDisplay}
-                `;
-                listaAlunosCadastrados.appendChild(li);
-            });
-        } catch (error) {
+        if (error) {
             console.error('Erro ao buscar clientes:', error);
-            listaAlunosCadastrados.innerHTML = `<li style="color: red;">Erro ao carregar: ${error.message}</li>`;
+            listaAlunosCadastrados.innerHTML = `<li>Erro ao carregar. Verifique o console.</li>`;
+            return;
         }
+
+        listaAlunosCadastrados.innerHTML = '';
+
+        if (clients.length === 0) {
+            listaAlunosCadastrados.innerHTML = '<li>Nenhum cliente cadastrado.</li>';
+            return;
+        }
+
+        clients.forEach(client => {
+            const li = document.createElement('li');
+            li.className = 'client-item-list';
+
+            // Lógica para exibir a credencial ou o status "Acesso Desativado"
+            const temCredencial = client.credencial;
+            const credencialDisplay = temCredencial 
+                ? `Credencial: <strong>${client.credencial}</strong>` 
+                : `<span style="color: #e74c3c;">Acesso Desativado</span>`;
+
+            // Lógica para mostrar o botão de desativar apenas se houver credencial
+            const botaoDisplay = temCredencial
+                ? `<button class="remove-client-btn" data-client-id="${client.id}">Desativar Acesso</button>`
+                : '';
+
+            li.innerHTML = `
+                <div class="client-info">
+                    <span>${client.nome || 'Nome não encontrado'}</span>
+                    <small>${credencialDisplay}</small>
+                </div>
+                ${botaoDisplay}
+            `;
+            listaAlunosCadastrados.appendChild(li);
+        });
     }
 
     // --- EVENT LISTENERS ---
@@ -162,34 +123,26 @@ function initCadastroAlunos() {
             alert('Por favor, preencha o nome do aluno.');
             return;
         }
-
-        try {
-            btnSalvarAluno.disabled = true;
-            btnSalvarAluno.textContent = 'Salvando...';
-            
-            const novaCredencial = gerarCredencial();
-            const novoCliente = {
-                nome: nome,
-                data_inicio: document.getElementById('data-cadastro').value || null,
-                valor_consultoria: document.getElementById('valor-consultoria').value || null,
-                credencial: novaCredencial
-            };
-            
-            const { data, error } = await _supabase.from('clients').insert([novoCliente]).select();
-            
-            if (error) {
-                throw error;
-            }
-
+        // ... resto do código de salvar não precisa de alteração
+        btnSalvarAluno.disabled = true;
+        btnSalvarAluno.textContent = 'Salvando...';
+        const novaCredencial = gerarCredencial();
+        const novoCliente = {
+            nome: nome,
+            data_inicio: document.getElementById('data-cadastro').value || null,
+            valor_consultoria: document.getElementById('valor-consultoria').value || null,
+            credencial: novaCredencial
+        };
+        const { data, error } = await _supabase.from('clients').insert([novoCliente]).select();
+        btnSalvarAluno.disabled = false;
+        btnSalvarAluno.textContent = 'Salvar Aluno';
+        if (error) {
+            console.error('Erro ao salvar cliente:', error);
+            alert(`Ocorreu um erro ao salvar. Detalhes: ${error.message}`);
+        } else {
             limparFormulario();
             renderizarAlunos();
             mostrarModalCredencial(novaCredencial);
-        } catch (error) {
-            console.error('Erro ao salvar cliente:', error);
-            alert(`Ocorreu um erro ao salvar. Detalhes: ${error.message}`);
-        } finally {
-            btnSalvarAluno.disabled = false;
-            btnSalvarAluno.textContent = 'Salvar Aluno';
         }
     });
 
@@ -204,37 +157,17 @@ function initCadastroAlunos() {
     });
 
     // Listeners do modal (não mudam)
-    if (spanClose) {
-        spanClose.onclick = () => modal.style.display = 'none';
-    }
-    
+    spanClose.onclick = () => modal.style.display = 'none';
     window.onclick = (event) => {
         if (event.target == modal) modal.style.display = 'none';
     };
-    
-    if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
-            // MELHORADO: Fallback para dispositivos que não suportam clipboard API
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(credencialSpan.textContent).then(() => {
-                    copyBtn.textContent = 'Copiado!';
-                    setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
-                });
-            } else {
-                // Fallback para dispositivos antigos
-                const textArea = document.createElement('textarea');
-                textArea.value = credencialSpan.textContent;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                copyBtn.textContent = 'Copiado!';
-                setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
-            }
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(credencialSpan.textContent).then(() => {
+            copyBtn.textContent = 'Copiado!';
+            setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 2000);
         });
-    }
+    });
 
     // --- INICIALIZAÇÃO ---
     renderizarAlunos();
-}
-
+});
