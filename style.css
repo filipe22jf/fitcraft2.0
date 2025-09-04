@@ -1496,3 +1496,56 @@ body {
 #copy-credential-btn:hover {
     background-color: #0056b3;
 }
+
+/* Toast Messages */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    max-width: 350px;
+    border-left: 4px solid #4CAF50;
+}
+
+.toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast.success {
+    border-left-color: #4CAF50;
+}
+
+.toast.error {
+    border-left-color: #f44336;
+}
+
+.toast-icon {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.toast.success .toast-icon {
+    color: #4CAF50;
+}
+
+.toast.error .toast-icon {
+    color: #f44336;
+}
+
+.toast-message {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+

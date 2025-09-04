@@ -21,57 +21,40 @@
 <body>
     <div class="container">
         <header class="header">
-           <button class="btn-voltar" onclick="window.location.href='index.html'" title="Voltar ao menu principal">
+           <button class="btn-voltar" onclick="window.location.href=\'index.html\'" title="Voltar ao menu principal">
                 <img src="images/botao_voltar_sem_fundo.png" alt="Voltar">
             </button>      
         </header>
 
         <section class="workout-creator">
-            <!-- Card de Seleção do Aluno -->
+            <!-- Card de Dados da Ficha -->
             <div class="form-card">
-                <h3>
-                    <span>👤</span>
-                    Selecionar Aluno
-                </h3>
-                <div class="form-group">
-                    <label for="select-aluno">Selecione o Aluno *</label>
-                    <select id="select-aluno" required>
-                        <option value="">Carregando alunos...</option>
-                    </select>
-                </div>
-                
-                <!-- Seção de Fichas Existentes (aparece após selecionar aluno) -->
-                <div id="fichas-existentes-section" style="display: none;">
-                    <h4 style="margin-top: 20px; color: #2f3e5c;">📋 Fichas de Treino Existentes</h4>
-                    <div id="lista-fichas-existentes">
-                        <!-- Lista será populada dinamicamente -->
-                    </div>
-                    <div class="form-row-buttons" style="margin-top: 15px;">
-                        <button class="add-exercise-btn" id="btn-nova-ficha" type="button" style="background: #28a745;">
-                            ➕ Criar Nova Ficha
-                        </button>
-                        <button class="add-exercise-btn" id="btn-editar-ficha" type="button" style="background: #ffc107; color: #000;" disabled>
-                            ✏️ Editar Ficha Selecionada
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card de Dados da Ficha (aparece ao criar nova ou editar) -->
-            <div class="form-card" id="dados-ficha-section" style="display: none;">
                 <h3>
                     <span>📋</span>
                     Dados da Ficha
-                    <span id="modo-edicao" style="font-size: 14px; color: #007bff; margin-left: 10px;"></span>
                 </h3>
                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="select-aluno">Selecione o Aluno *</label>
+                        <select id="select-aluno" required>
+                            <option value="">Carregando alunos...</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label for="nome-ficha">Nome da Ficha *</label>
                         <input type="text" id="nome-ficha" placeholder="Ex: Ficha A - Hipertrofia" required>
                     </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label for="data-troca">Data de Troca da Ficha *</label>
                         <input type="date" id="data-troca" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="select-ficha-existente">Carregar Ficha Existente</label>
+                        <select id="select-ficha-existente" disabled>
+                            <option value="">Selecione uma ficha</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-group">
@@ -79,14 +62,17 @@
                     <textarea id="observacoes-aluno" placeholder="Ex: Lesões, limitações, objetivos específicos..." rows="3"></textarea>
                 </div>
                 <div class="form-row-buttons">
-                    <button class="add-exercise-btn" id="btn-cancelar-edicao" type="button" style="background: #6c757d;">
-                        ❌ Cancelar
+                    <button class="add-exercise-btn" id="btn-nova-ficha" type="button" style="background: #28a745;">
+                        ➕ Nova Ficha
+                    </button>
+                    <button class="add-exercise-btn" id="btn-carregar-ficha" type="button" style="background: #17a2b8;" disabled>
+                        🔄 Carregar Ficha
                     </button>
                 </div>
             </div>
 
-            <!-- Card de Adicionar Exercício (aparece quando há uma ficha ativa) -->
-            <div class="form-card" id="adicionar-exercicio-section" style="display: none;">
+            <!-- Card de Adicionar Exercício -->
+            <div class="form-card">
                 <h3>
                     <span>💪</span>
                     Adicionar Exercício
@@ -158,12 +144,11 @@
                 </button>
             </div>
 
-            <!-- Card da Ficha de Treino Atual -->
-            <div class="form-card" id="ficha-atual-section" style="display: none;">
+            <!-- Card da Ficha de Treino -->
+            <div class="form-card">
                 <h3>
                     <span>📝</span>
                     Ficha de Treino Atual
-                    <span id="nome-ficha-atual" style="font-size: 16px; color: #007bff; margin-left: 10px;"></span>
                 </h3>
                 <div class="counter">0 exercício(s) adicionado(s)</div>
                 
@@ -172,6 +157,7 @@
                         <div class="empty-icon">📋</div>
                         <div>
                             <strong>Nenhum exercício adicionado ainda</strong>  
+
                             Selecione exercícios para começar a montar a ficha.
                         </div>
                     </div>
@@ -210,18 +196,19 @@
 
     <script>
         // Service Worker para PWA
-        if ('serviceWorker' in navigator ) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+        if (\'serviceWorker\' in navigator ) {
+            window.addEventListener(\'load\', () => {
+                navigator.serviceWorker.register(\'/service-worker.js\')
                     .then(registration => {
-                        console.log('ServiceWorker registered: ', registration);
+                        console.log(\'ServiceWorker registered: \', registration);
                     })
                     .catch(error => {
-                        console.log('ServiceWorker registration failed: ', error);
+                        console.log(\'ServiceWorker registration failed: \', error);
                     });
             });
         }
     </script>
 </body>
 </html>
+
 
